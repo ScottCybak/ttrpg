@@ -1,0 +1,214 @@
+:root {
+    --bg: #2e2e2e;
+    --color: #cfcfcf;
+    --tile-outline: #ffffff71;
+    --tile-outline-hover: #000000d0;
+    --disc-outline: var(--tile-outline);
+    --font-size: 14px;
+    --font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+}
+
+html {
+    box-sizing: border-box;
+    font-size: var(--font-size);
+    width: 100vw;
+    height: 100vh;
+}
+*, *::after, *::before {
+    box-sizing: border-box;
+}
+body {
+    background: var(--bg);
+    color: var(--color);
+    margin: 0;
+}
+body, select, input, button {
+    font-size: .75rem;
+    font-family: var(--font-family);
+}
+
+select, input, button {
+    border: 1px solid var(--bg);
+    border-radius: 2px;
+    padding: 2px 4px;
+}
+
+body, #game-root {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+
+    .dialog-underlay {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background-color: #000000c4;
+        z-index: 1;
+    }
+    .dialog-content {
+        overflow: auto;
+        z-index: 2;
+        background: var(--bg);
+        color: var(--color);
+        padding: 8px 16px;
+        border: 1px solid var(--color);
+    }
+}
+
+.form-editor {
+    .form-actions-container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+}
+
+#gm-options {
+    --padding: 4px;
+    position: fixed;
+    z-index: 1;
+    top: var(--padding);
+    left: var(--padding);
+    display: flex;
+    padding: var(--padding);
+    .gm-options-section {
+        display: flex;
+        padding: 0 var(--padding) 0 0;
+        border-right: 1px solid var(--color);
+    }
+}
+
+#gm-client {
+    perspective: var(--perspective);
+    perspective-origin: center center;
+    transform-style: preserve-3d;
+    width: 100vw;
+    height: 100vh;
+}
+
+#map {
+    width: 100vw;
+    height: 100vh;
+    position: absolute;
+    transform-style: preserve-3d;
+    transition: transform 0.1s linear;
+
+    --grass: url('img/textures/green-grass-512x512.png');
+    --grass-dry: url('img/textures/deep-grass-512x512.png');
+    --water: url('img/textures/rough-sea-512x512.png');
+    --mud: url('img/textures/muddy-terrain-512x512.png');
+}
+
+.rectangular-prism {
+    position: absolute;
+    transform-style: preserve-3d;
+    transform-origin: left top;
+
+    &.hovering {
+        .face {
+            filter: brightness(1.2);
+        }
+    }
+}
+.face {
+    position: absolute;
+    transform-origin: left top;
+    border: 1px solid var(--tile-outline);
+    pointer-events: none;
+}
+.face-t:only-child {
+    filter: brightness(0.9);
+}
+
+.entity {
+    position: absolute;
+    transform-style: preserve-3d;
+    z-index: 9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .entity-disc {
+        width: 90%;
+        height: 90%;
+        border-radius: 50%;
+        background-color: rgba(0, 0, 0, 0.411);
+        border: 2px solid var(--player-color, var(--disc-outline));
+        transform-style: preserve-3d;
+        position: absolute;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        .entity-rod {
+            &.hide {
+                display: none;
+            }
+        }
+        .entity-rod .face {
+            position: absolute;
+        }
+    }
+
+    .entity-floater {
+        background: var(--disc);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 4px solid var(--player-color, var(--disc-outline));
+        border-radius: 50%;
+        width: 100%;
+        height: 100%;
+        transition: all 125ms ease;
+        background-size: 100%;
+        background-repeat: no-repeat;
+        background-position: center;
+        cursor: pointer;
+        &:hover {
+            background-size: 125%;
+        }
+    }
+
+    &.hostile {
+        .entity-floater {
+            &::before {
+                content: "";
+                position: absolute;
+                inset: -4px;
+                outline: 4px solid red;
+                border-radius: 50%;
+            }
+        }
+        &.active .entity-floater::before {
+            outline-style: dashed;
+            animation: spin 30s linear infinite;       
+        }
+    }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.texture {
+    background-position: var(--texture-x) var(--texture-y);
+    background-size: 256px 256px;
+    pointer-events: none;
+
+    &.grass { background-image: var(--grass); }
+    &.grass-dry { background-image: var(--grass-dry); }
+    &.mud { background-image: var(--mud); }
+    &.water { background-image: var(--water); }
+}

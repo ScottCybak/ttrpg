@@ -1,0 +1,3 @@
+# Fuck you robots
+User-agent: *
+Allow: /

@@ -1,0 +1,32 @@
+# Node dependencies
+node_modules/
+
+# Output folder
+dist/
+
+# TypeScript cache files
+*.tsbuildinfo
+
+# Chrome download garbage
+*.crdownload
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+
+# IDE/editor specific files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Optional: local development server cache (if using livereload)
+.livereload-cache/
