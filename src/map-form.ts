@@ -1,7 +1,7 @@
 import { faceLabels } from "def/face";
 import { FORM_CONTROL_TYPE, FormControl } from "def/form";
 import { MOVEMENT, movementLabels } from "def/movement";
-import { textureLabels } from "def/texture";
+import { textureLabels, textureOptions } from "def/texture";
 
 export enum FACE {
     TOP = 't',
@@ -12,7 +12,6 @@ export enum FACE {
 }
 
 // holds our options for the individual dropdowns
-const textureOptions = Object.entries(textureLabels).map(([value, label]) => ({ value, label }));
 const textureSelects: FormControl[] = Object.entries(faceLabels)
     .map(([property, label]) => ({
         property,

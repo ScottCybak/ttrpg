@@ -127,7 +127,7 @@ export class TileMap {
         this.tiles.length = 0;
     }
 
-    private tileByElement(element: HTMLElement) {
+    tileByElement(element: HTMLElement) {
         const tileElement =  element.closest('.tile');
         return this.tiles.flat(2).find(t => t.element === tileElement);
     }

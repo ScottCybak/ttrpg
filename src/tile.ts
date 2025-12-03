@@ -19,9 +19,10 @@ export class Tile {
     row = new Watched(0);
     column = new Watched(0);
     tileSizePx = new Watched(0);
-    options = new Watched<TileOptions>({});
+    readonly options = new Watched<TileOptions>({});
     elevationStepPx = new Watched(0);
     totalElevation = 0;
+
     readonly hovering = new Watched(false);
     readonly positionalData = new Watched<PositionalData | undefined>(undefined);
     

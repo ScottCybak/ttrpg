@@ -11,3 +11,5 @@ export const textureLabels: {[key in TEXTURE]: string} = {
     [TEXTURE.MUD]: 'Mud',
     [TEXTURE.WATER]: 'Water',
 }
+
+export const textureOptions = Object.entries(textureLabels).map(([value, label]) => ({ value, label }));

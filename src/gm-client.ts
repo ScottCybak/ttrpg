@@ -15,6 +15,7 @@ export class GmClient {
     readonly maps = new Watched<MapConfig[]>([]);
     readonly map = new Watched<MapConfig | undefined>(undefined);
     readonly campaign = new Watched<Campaign | undefined>(undefined);
+    tileMap!: TileMap;
 
     private scale = new Watched(+(localStorage.getItem('scale') ?? 1));
     private windowWidth = new Watched(window.innerWidth);
@@ -23,11 +24,12 @@ export class GmClient {
     private positionY = new Watched(0);
     private maxX = 0;
     private maxY = 0;
-    private dragging = false;
-    private lastPointer: [number, number] = [0, 0];
-
+    private keysDown = new Set<string>();
+    private moveMultiplier = 16;
+    
     readonly playerEntities = new Map<string, Entity>();
     readonly npcEntities = new Map<string, Entity>();
+    readonly hideAll = new Watched(false);
 
     constructor() {
         const root = document.getElementById('game-root');
@@ -36,7 +38,28 @@ export class GmClient {
 
         gmOptions.gmClient = this;
         gmOptions.appendTo(root);
+    }
 
+    gameLoop() {
+        const mult = this.moveMultiplier;
+        let x = 0;
+        let y = 0;
+        if (this.keysDown.has('w')) y -= mult;
+        if (this.keysDown.has('s')) y += mult;
+        if (this.keysDown.has('a')) x -= mult;
+        if (this.keysDown.has('d')) x += mult;
+        const map = x || y ? this.map.get() : undefined;
+        if (x) {
+            const width = (map?.tileSizePx ?? 0) * (map?.columns ?? 0);
+            const curX = this.positionX.get();
+            this.positionX.set(Math.min(Math.max(curX + x, 0), width));
+        }
+        if (y) {
+            const height = (map?.tileSizePx ?? 0) * (map?.rows ?? 0);
+            const curY = this.positionY.get();
+            this.positionY.set(Math.min(Math.max(curY + y, 0), height));
+        }
+        requestAnimationFrame(this.gameLoop.bind(this));
     }
 
     load(campaign: Campaign): this {
@@ -75,7 +98,7 @@ export class GmClient {
     }
 
     loadMap(map: MapConfig) {
-        const tileMap = new TileMap(map, this).appendTo(this.element);
+        const tileMap = this.tileMap = new TileMap(map, this).appendTo(this.element);
        
         this.map.set(map);
         this.maxX = map.columns * map.tileSizePx;
@@ -86,6 +109,7 @@ export class GmClient {
         this.positionY.set(this.maxY / 2);
 
         this.createListeners(tileMap);
+        requestAnimationFrame(this.gameLoop.bind(this));
 
         return this;
     }
@@ -163,12 +187,13 @@ export class GmClient {
 
         this.scale.watch(s => localStorage.setItem('scale', '' + (s ?? 1)));
 
-        // no gesture, yet.. similar though
-        this.element.addEventListener('pointerdown', evt => this.onPointerDown(evt));
-        window.addEventListener('pointermove', evt => this.onPointerMove(evt));
-        window.addEventListener('pointerup', () => this.onPointerUp());
-        window.addEventListener('pointercancel', () => this.onPointerUp());
-
+        window.addEventListener('keydown', evt => {
+            if (!evt.repeat) {
+                this.keysDown.add(evt.key.toLowerCase())
+            }
+        });
+        window.addEventListener('keyup', evt => this.keysDown.delete(evt.key.toLowerCase()));
+  
         // watch scaling, and positioning, and update the tileMap object
         Watched.combine(
             this.scale,
@@ -187,27 +212,5 @@ export class GmClient {
                 `;
             })
         });
-    }
-
-
-
-    private onPointerDown(evt: MouseEvent) {
-        this.dragging = true;
-        this.lastPointer = [evt.clientX, evt.clientY];
-    }
-
-    private onPointerMove(evt: MouseEvent) {
-        if (!this.dragging) return;
-        const { clientX, clientY } = evt;
-        const dx = clientX - this.lastPointer[0];
-        const dy = clientY - this.lastPointer[1];
-        this.lastPointer[0] = clientX;
-        this.lastPointer[1] = clientY;
-        this.positionX.set(this.positionX.get() - dx);
-        this.positionY.set(this.positionY.get() - dy);
-    }
-
-    private onPointerUp() {
-        this.dragging = false;
     }
 }

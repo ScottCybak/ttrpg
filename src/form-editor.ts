@@ -34,7 +34,6 @@ export class FormEditor<T extends Object> {
         form: HTMLFormElement | HTMLFieldSetElement = this.form,
         accumulator: Record<string, unknown> = {}
     ): T {
-        const value: Record<string, unknown> = {};
         const fieldMap = this.fieldMap;
         const all = [...form.elements].filter(e => e.hasAttribute('name')) as HTMLFormElement[];
         const directDescendants = all

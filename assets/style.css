@@ -1,11 +1,23 @@
 :root {
     --bg: #2e2e2e;
     --color: #cfcfcf;
+    --active-color: rgba(255, 0, 255, 0.603);
     --tile-outline: #ffffff71;
     --tile-outline-hover: #000000d0;
     --disc-outline: var(--tile-outline);
     --font-size: 14px;
+    --icon-size: 16px;
     --font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+
+    /* these HAVE to correspond to the files in the TEXTURE map */
+    --grass: url('img/textures/green-grass-512x512.png');
+    --grass-dry: url('img/textures/deep-grass-512x512.png');
+    --water: url('img/textures/rough-sea-512x512.png');
+    --mud: url('img/textures/muddy-terrain-512x512.png');
+}
+
+.fa {
+    font-size: var(--icon-size);
 }
 
 html {
@@ -21,6 +33,7 @@ body {
     background: var(--bg);
     color: var(--color);
     margin: 0;
+    user-select: none;
 }
 body, select, input, button {
     font-size: .75rem;
@@ -83,11 +96,60 @@ body, #game-root {
     top: var(--padding);
     left: var(--padding);
     display: flex;
-    padding: var(--padding);
+    background-color: var(--bg);
+    gap: 0 calc(var(--padding) * 2);
     .gm-options-section {
         display: flex;
-        padding: 0 var(--padding) 0 0;
-        border-right: 1px solid var(--color);
+        align-items: center;
+        &:last-child {
+            border-right: 0;
+        }
+    }
+    .gm-option-tool {
+        padding: var(--padding);
+        border: 2px solid #ffffff00;
+        border-radius: 4px;
+        &.active {
+            border-color: var(--active-color);
+        }
+        &:hover {
+            cursor: pointer;
+            filter: brightness(1.2);
+        }
+    }
+}
+
+.gm-option-tool-texture {
+    position: fixed;
+    top: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--o-diameter);
+    height: var(--o-diameter);
+    border-radius: 50%;
+    border: 2px solid var(--color);
+    overflow: hidden;
+    background: var(--bg);
+
+    .gm-option-tool-texture-box {
+        position: absolute;
+        border: 1px solid var(--color);
+        background-size: 256px 256px;
+        select {
+            width: 100%;
+            height: 100%;
+            background: none;
+        }
+    }
+    .gm-option-tool-picker {
+        position: absolute;
+        right: 16%;
+        bottom: 16%;
+        cursor: pointer;
+        &.active {
+            color: var(--active-color);
+        }
     }
 }
 
@@ -105,11 +167,6 @@ body, #game-root {
     position: absolute;
     transform-style: preserve-3d;
     transition: transform 0.1s linear;
-
-    --grass: url('img/textures/green-grass-512x512.png');
-    --grass-dry: url('img/textures/deep-grass-512x512.png');
-    --water: url('img/textures/rough-sea-512x512.png');
-    --mud: url('img/textures/muddy-terrain-512x512.png');
 }
 
 .rectangular-prism {
@@ -133,6 +190,9 @@ body, #game-root {
     filter: brightness(0.9);
 }
 
+.hide-entities .entity {
+    display: none;
+}
 .entity {
     position: absolute;
     transform-style: preserve-3d;
