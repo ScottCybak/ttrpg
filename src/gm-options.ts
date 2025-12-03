@@ -1,12 +1,9 @@
-import { FACE } from "def/face";
-import { TEXTURE, textureOptions } from "def/texture";
-import { TileData } from "def/tile-data";
-import { TileOptions } from "def/tile-options";
 import { domCreate } from "domCreate";
 import { GmClient } from "gm-client";
 import { ICON, Icon } from "icon";
 import { throttle } from "throttle";
-import { Tile } from "tile";
+import { TextureSelect } from "tools/texture-select";
+import { ToolBase } from "tools/tool-base";
 import { Watched } from "watched";
 
 enum TOOLS {
@@ -17,16 +14,14 @@ enum TOOLS {
 class GmOptions {
     private _gmClient!: GmClient;
     private activeTool = new Watched<TOOLS>(TOOLS.NONE);
-    private activePicker = new Watched(false);
     private activeDragging = false;
-    private values: {
-        textureSelect?: TileOptions['texture'],
-    } = {}
+    private tools: {
+        textureSelect?: TextureSelect,
+    } = {};
     
     private element = domCreate('div', {
         id: 'gm-options',
     });
-    private textureSelectElement!: HTMLFormElement;
 
     // Map
     private mapOptions = domCreate('div', { id: 'gm-map-options', classList: ['gm-options-section'] }, this.element);
@@ -71,8 +66,12 @@ class GmOptions {
                     document.body.classList.remove('hide-entities');
                     break;
                 case TOOLS.TEXTURE_PAINT:
-                    this.showTextureSelect();
-                    document.body.classList.add('hide-entities');
+                    // check to see if we have the texture select
+                    let ts = this.tools.textureSelect;
+                    if (!ts) {
+                        ts = this.tools.textureSelect = new TextureSelect(this.element);
+                    }
+                    ts.show();
                     break;
             }
         })
@@ -81,8 +80,8 @@ class GmOptions {
             if (evt.repeat) return;
             if (evt.key === 'Escape') {
 
-                if (this.activePicker.get()) {
-                    this.activePicker.set(false);
+                if (ToolBase.activePicker.get()) {
+                    ToolBase.activePicker.set(false);
                 } else if (this.activeTool.get()) {
                     this.activeTool.set(TOOLS.NONE);
                 }
@@ -104,24 +103,26 @@ class GmOptions {
         // what tile did we click on?
         const t = evt.target as HTMLElement;
         const tile = this.gmClient.tileMap.tileByElement(t);
-        if (this.activePicker.get() && tile) {
+        if (ToolBase.activePicker.get() && tile) {
             switch (this.activeTool.get()) {
                 case TOOLS.TEXTURE_PAINT:
-                    this.textureSelectPick(tile);
+                    this.tools.textureSelect?.select(tile);
                     break;
             }
         }
     }
 
     private onPointerMove(evt: PointerEvent) {
-        if (this.activeDragging && !this.activePicker.get()) {
+        if (this.activeDragging && !ToolBase.activePicker.get()) {
             const t = evt.target as HTMLElement;
             switch (this.activeTool.get()) {
                 case TOOLS.TEXTURE_PAINT:
+                    // we need to call something
+                    // 
                     const tile = this.gmClient.tileMap.tileByElement(t);
                     if (tile) {
                         const o = tile.options.get();
-                        const texture = this.values.textureSelect;
+                        const texture = this.tools.textureSelect?.value;
                         tile.options.set({
                             ...o,
                             texture,
@@ -134,7 +135,7 @@ class GmOptions {
 
     private onPointerDown(evt: PointerEvent) {
         if (this.activeTool.get()) {
-            if (!this.activePicker.get()) {
+            if (!ToolBase.activePicker.get()) {
                 console.warn('tell the gm client to hide markers?s')
                 this.activeDragging = true;
                 this.onPointerMove(evt);
@@ -147,114 +148,8 @@ class GmOptions {
     }
 
     private hideAllTools() {
-        // this.textureSelectElement?.classList.add('hidden');
-        // rmeove it from the dom
-        this.textureSelectElement?.parentElement?.removeChild(this.textureSelectElement);
-    }
-
-    private showTextureSelect() {
-        let form = this.textureSelectElement;
-        if (!form) {
-            const size = 64; // defines our width
-            const half = size / 2;
-            const diameter = (half * Math.sqrt(10)) * 2;
-            const style = `width: ${size}px; height: ${size}px;`;
-            const classList = ['gm-option-tool-texture-box'];
-            const shift = (diameter - (size * 3)) / 2;
-            const options = textureOptions.map(({value, label}) => `<option value="${value}">${label}</option>`).join('')
-
-            // our host element
-            form = this.textureSelectElement = domCreate('form', {
-                classList: ['gm-option-tool-texture'],
-                style: `--o-diameter: ${diameter}px;`
-            }, this.element);
-
-            // each of the sides
-            domCreate('div', {
-                classList,
-                style: `${style} top: ${shift}px`,
-                inner: `<select name="${FACE.NORTH}">${options}</select>`,
-            }, form);
-            domCreate('div', {
-                classList,
-                style: `${style} left: ${shift}px;`,
-                inner: `<select name="${FACE.WEST}">${options}</select>`,
-            }, form);
-            domCreate('div', {
-                classList,
-                style: `${style}`,
-                inner: `<select name="${FACE.TOP}">${options}</select>`,
-            }, form);
-            domCreate('div', {
-                classList,
-                style: `${style} right: ${shift}px;`,
-                inner: `<select name="${FACE.EAST}">${options}</select>`,
-            }, form);
-            domCreate('div', {
-                classList,
-                style: `${style} bottom: ${shift}px;`,
-                inner: `<select name="${FACE.SOUTH}">${options}</select>`,
-            }, form);
-
-            // create an eyedropper
-            const pickerBox = domCreate('div', {
-                classList: ['gm-option-tool-picker'],
-            }, form)
-            // with an icon
-            new Icon(ICON.EYEDROPPER, pickerBox).onClick(() => {
-                const active = !this.activePicker.get();
-                this.activePicker.set(active);
-            });
-            // watch the activePicker and style our doodad
-            this.activePicker.watch(active => {
-                pickerBox.classList[active ? 'add' : 'remove']('active');
-            });
-
-            // listen to form emitted changes, and tell it to clear the picker when the user interacts
-            form.addEventListener('change', () => this.onTextureChange(true));
-
-            // call it for the first time
-            this.onTextureChange(false);
-        } else if (!form.parentElement) {
-            this.element.appendChild(form);
-        }
-
-        // force the picker off
-        this.activePicker.set(false);
-    }
-
-    private textureSelectPick(tile: Tile) {
-        const texture = tile.options.get()?.texture;
-        if (texture) {
-            Object.entries(texture)
-                .forEach(([key, value]) => {
-                    const e = this.textureSelectElement.elements.namedItem(key);
-                    if (e) {
-                        (e as HTMLSelectElement).value = value;
-                    } 
-                });
-            this.onTextureChange(true);
-        }
-    }
-
-    private onTextureChange(clearPicker: boolean) {
-        const value: TileOptions['texture'] = {};
-        [...this.textureSelectElement.elements].map(e => {
-            const asSelect = e as HTMLSelectElement;
-            if (asSelect.name) {
-                value[asSelect.name as FACE] = asSelect.value as TEXTURE;
-                if (e.parentElement) {
-                    e.parentElement.style.backgroundImage = `var(--${asSelect.value})`;
-                }
-            }
-        })
-        if (Object.keys(value).length) {
-            this.values.textureSelect = value;
-        }
-        if (clearPicker) {
-            this.activePicker.set(false);
-        }
-    }
+        this.tools.textureSelect?.disconnect();
+    }   
 
     create() {
         const tileOptionsSection = domCreate('div', { classList: ['gm-options-section']}, this.element);
