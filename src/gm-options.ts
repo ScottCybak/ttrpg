@@ -210,12 +210,15 @@ class GmOptions {
                 pickerBox.classList[active ? 'add' : 'remove']('active');
             });
 
-            // listen to form changes and update the
-            form.addEventListener('change', this.onTextureChange.bind(this));
-            this.onTextureChange();
+            // listen to form emitted changes, and tell it to clear the picker when the user interacts
+            form.addEventListener('change', () => this.onTextureChange(true));
+
+            // call it for the first time
+            this.onTextureChange(false);
         } else if (!form.parentElement) {
             this.element.appendChild(form);
         }
+
         // force the picker off
         this.activePicker.set(false);
     }
@@ -230,11 +233,11 @@ class GmOptions {
                         (e as HTMLSelectElement).value = value;
                     } 
                 });
-            this.onTextureChange();
+            this.onTextureChange(true);
         }
     }
 
-    private onTextureChange() {
+    private onTextureChange(clearPicker: boolean) {
         const value: TileOptions['texture'] = {};
         [...this.textureSelectElement.elements].map(e => {
             const asSelect = e as HTMLSelectElement;
@@ -247,6 +250,9 @@ class GmOptions {
         })
         if (Object.keys(value).length) {
             this.values.textureSelect = value;
+        }
+        if (clearPicker) {
+            this.activePicker.set(false);
         }
     }
 
