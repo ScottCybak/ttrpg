@@ -5,6 +5,7 @@ import { Dialog } from "dialog";
 import { domCreate } from "domCreate";
 import { Entity } from "entity";
 import { gmOptions } from "gm-options";
+import { keyboardInput } from "keys-down";
 import { mapForm } from "map-form";
 import { throttle } from "throttle";
 import { TileMap } from "tile-map";
@@ -24,12 +25,11 @@ export class GmClient {
     private positionY = new Watched(0);
     private maxX = 0;
     private maxY = 0;
-    private keysDown = new Set<string>();
     private moveMultiplier = 16;
     
     readonly playerEntities = new Map<string, Entity>();
     readonly npcEntities = new Map<string, Entity>();
-    readonly hideAll = new Watched(false);
+    // readonly hideAll = new Watched(fa)
 
     constructor() {
         const root = document.getElementById('game-root');
@@ -44,10 +44,10 @@ export class GmClient {
         const mult = this.moveMultiplier;
         let x = 0;
         let y = 0;
-        if (this.keysDown.has('w')) y -= mult;
-        if (this.keysDown.has('s')) y += mult;
-        if (this.keysDown.has('a')) x -= mult;
-        if (this.keysDown.has('d')) x += mult;
+        if (keyboardInput.has('w')) y -= mult;
+        if (keyboardInput.has('s')) y += mult;
+        if (keyboardInput.has('a')) x -= mult;
+        if (keyboardInput.has('d')) x += mult;
         const map = x || y ? this.map.get() : undefined;
         if (x) {
             const width = (map?.tileSizePx ?? 0) * (map?.columns ?? 0);
@@ -185,14 +185,13 @@ export class GmClient {
             this.scale.set(scale);
         }, zoomThrottle ?? 1000 / 60 ), { passive: false });
 
-        this.scale.watch(s => localStorage.setItem('scale', '' + (s ?? 1)));
-
-        window.addEventListener('keydown', evt => {
-            if (!evt.repeat) {
-                this.keysDown.add(evt.key.toLowerCase())
-            }
+        this.scale.watch(s => {
+            const value = s ?? 1;
+            localStorage.setItem('scale', '' + s);
+            document.body.style.setProperty('--active-zoom', `${s}`)
         });
-        window.addEventListener('keyup', evt => this.keysDown.delete(evt.key.toLowerCase()));
+
+        
   
         // watch scaling, and positioning, and update the tileMap object
         Watched.combine(

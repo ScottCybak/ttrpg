@@ -61,7 +61,7 @@ export class Tile {
         // all of the internals of this neeed to be split into rectuangular-prism 
         
         const e = this.element;
-        e.childNodes.forEach(n => e.removeChild(n));
+        [...e.childNodes].forEach(n => e.removeChild(n));
 
         const left = column * tileSizePx;
         const top = row * tileSizePx;
@@ -69,7 +69,7 @@ export class Tile {
         const height = tileSizePx;
         const depth = (options.elevation ?? 0) * elevationStepPx;
 
-        new RectangularPrism(this.element, {width, height, depth }, options.texture);
+        new RectangularPrism(this.element, {width, height, depth }, options);
 
         // position it
         e.style.left = `${left}px`;

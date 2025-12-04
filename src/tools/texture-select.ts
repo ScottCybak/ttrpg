@@ -6,15 +6,11 @@ import { Icon, ICON } from "icon";
 import { Tile } from "tile";
 import { TileOptions } from "def/tile-options";
 
-export class TextureSelect extends ToolBase<HTMLFormElement> {
+export class TextureSelect extends ToolBase<HTMLFormElement, TileOptions['texture']> {
 
-    private _value?: TileOptions['texture'];
+    toolCssClass = 'texture-select';
 
-    get value() {
-        return this._value;
-    }
-
-    show() {
+    override show() {
         super.show();
         let form = this.toolElement;
         if (!form) {
@@ -28,7 +24,7 @@ export class TextureSelect extends ToolBase<HTMLFormElement> {
 
             // our host element
             form = this.toolElement = domCreate('form', {
-                classList: ['gm-option-tool-texture'],
+                classList: [this.cssClass, 'gm-option-tool-texture'],
                 style: `--o-diameter: ${diameter}px;`
             }, this.element);
 
@@ -86,7 +82,7 @@ export class TextureSelect extends ToolBase<HTMLFormElement> {
         ToolBase.activePicker.set(false);
     }
 
-    select(tile: Tile) {
+    override tileClicked(tile: Tile) {
         const texture = tile.options.get()?.texture;
         if (texture) {
             Object.entries(texture)
@@ -112,7 +108,7 @@ export class TextureSelect extends ToolBase<HTMLFormElement> {
             }
         })
         if (Object.keys(value).length) {
-            this._value = value;
+            this.value = value;
         }
         if (clearPicker) {
             ToolBase.activePicker.set(false);

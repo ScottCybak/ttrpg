@@ -1,23 +1,35 @@
+import { TileOptions } from "def/tile-options";
 import { domCreate } from "domCreate";
 import { GmClient } from "gm-client";
 import { ICON, Icon } from "icon";
 import { throttle } from "throttle";
+import { Elevation } from "tools/elevation";
 import { TextureSelect } from "tools/texture-select";
 import { ToolBase } from "tools/tool-base";
 import { Watched } from "watched";
 
-enum TOOLS {
+enum TOOL {
     NONE = 0,
     TEXTURE_PAINT = 1 << 0,
+    ELEVATION = 1 << 1,
 };
+
+type ValidTools = typeof TextureSelect | typeof Elevation;
+
+const validTools: [TOOL, ICON, ValidTools][] = [
+    [TOOL.TEXTURE_PAINT, ICON.CUBE, TextureSelect],
+    [TOOL.ELEVATION, ICON.ELEVATION, Elevation],
+];
 
 class GmOptions {
     private _gmClient!: GmClient;
-    private activeTool = new Watched<TOOLS>(TOOLS.NONE);
+    private activeTool = new Watched<TOOL>(TOOL.NONE);
     private activeDragging = false;
-    private tools: {
-        textureSelect?: TextureSelect,
-    } = {};
+    private tools: Partial<{[key in TOOL]: InstanceType<ValidTools>}> = {};
+    // private tools: {
+    //     textureSelect?: TextureSelect,
+    //     elevation?: Elevation,
+    // } = {};
     
     private element = domCreate('div', {
         id: 'gm-options',
@@ -38,7 +50,7 @@ class GmOptions {
 
     constructor() {
         this.newMap.addEventListener('click', () => {
-            this.activeTool.set(TOOLS.NONE);
+            this.activeTool.set(TOOL.NONE);
             this.gmClient?.createMap();
         });
         
@@ -47,7 +59,7 @@ class GmOptions {
         });
 
         this.editMap.addEventListener('click', () => {
-            this.activeTool.set(TOOLS.NONE);
+            this.activeTool.set(TOOL.NONE);
             const map = this.gmClient.map.get();
             if (map) {
                 this.gmClient?.editMap(map);
@@ -56,34 +68,30 @@ class GmOptions {
 
         this.create();
 
-        // watch our active tool and highlight the active one?
-        // should this be moved out?
+        // watch our active tool, hide things and create the instance of the this.tool
+        // if it hasn't been so already
         this.activeTool.watch(active => {
             document.body.style.setProperty('--active-tool', '' + active);
-            switch (active) {
-                case TOOLS.NONE:
-                    this.hideAllTools();
-                    document.body.classList.remove('hide-entities');
-                    break;
-                case TOOLS.TEXTURE_PAINT:
-                    // check to see if we have the texture select
-                    let ts = this.tools.textureSelect;
-                    if (!ts) {
-                        ts = this.tools.textureSelect = new TextureSelect(this.element);
+            this.hideAllTools();
+            if (active === TOOL.NONE) {
+                document.body.classList.remove('hide-entities');
+            } else {
+                validTools.filter(([tool]) => tool === active).forEach(([tool, icon, Klass]) => {
+                    let control = this.tools[tool];
+                    if (!control) {
+                        control = this.tools[tool] = new Klass(this.element);
                     }
-                    ts.show();
-                    break;
+                    control.show();
+                })
             }
-        })
+        });
 
         window.addEventListener('keydown', (evt) => {
-            if (evt.repeat) return;
             if (evt.key === 'Escape') {
-
                 if (ToolBase.activePicker.get()) {
                     ToolBase.activePicker.set(false);
                 } else if (this.activeTool.get()) {
-                    this.activeTool.set(TOOLS.NONE);
+                    this.activeTool.set(TOOL.NONE);
                 }
             }
         });
@@ -100,35 +108,36 @@ class GmOptions {
     }
 
     private onPointerClick(evt: PointerEvent) {
-        // what tile did we click on?
         const t = evt.target as HTMLElement;
         const tile = this.gmClient.tileMap.tileByElement(t);
         if (ToolBase.activePicker.get() && tile) {
-            switch (this.activeTool.get()) {
-                case TOOLS.TEXTURE_PAINT:
-                    this.tools.textureSelect?.select(tile);
-                    break;
-            }
+            const active = this.activeTool.get();
+            this.tools[active]?.tileClicked(tile);
         }
     }
 
     private onPointerMove(evt: PointerEvent) {
         if (this.activeDragging && !ToolBase.activePicker.get()) {
             const t = evt.target as HTMLElement;
-            switch (this.activeTool.get()) {
-                case TOOLS.TEXTURE_PAINT:
-                    // we need to call something
-                    // 
-                    const tile = this.gmClient.tileMap.tileByElement(t);
-                    if (tile) {
+            const active = this.activeTool.get();
+            const tool = this.tools[active];
+            if (!tool || !active) return;
+            // for now, handle these individually
+            const tile = this.gmClient.tileMap.tileByElement(t);
+            if (tile) {
+                switch (active) {
+                    case TOOL.TEXTURE_PAINT:
                         const o = tile.options.get();
-                        const texture = this.tools.textureSelect?.value;
+                        const texture = tool.getValue() as TileOptions['texture'];
                         tile.options.set({
                             ...o,
                             texture,
                         });
-                    }
-                    break;
+                        break;
+                    case TOOL.ELEVATION:
+                        (tool as Elevation).hoverOverTile(tile);
+                        break;
+                }
             }
         }
     }
@@ -136,9 +145,14 @@ class GmOptions {
     private onPointerDown(evt: PointerEvent) {
         if (this.activeTool.get()) {
             if (!ToolBase.activePicker.get()) {
-                console.warn('tell the gm client to hide markers?s')
                 this.activeDragging = true;
                 this.onPointerMove(evt);
+                const active = this.tools[this.activeTool.get()];
+                const t = evt.target as HTMLElement;
+                const tile = this.gmClient.tileMap.tileByElement(t);
+                if (active && tile) {
+                    active.tileClickStart(tile)
+                }
             }
         }
     }
@@ -148,18 +162,20 @@ class GmOptions {
     }
 
     private hideAllTools() {
-        this.tools.textureSelect?.disconnect();
+        Object.values(this.tools)
+            .forEach(t => t.disconnect());
     }   
 
     create() {
         const tileOptionsSection = domCreate('div', { classList: ['gm-options-section']}, this.element);
         ([
-            [TOOLS.NONE, ICON.MOVE], // this needs to be NONE, so our move watcher is disabled
-            [TOOLS.TEXTURE_PAINT, ICON.CUBE],
-        ] as [TOOLS, ICON][]).forEach(([tool, icon]) => this.createToolAction(tool, icon, tileOptionsSection))
+            [TOOL.NONE, ICON.MOVE], // this needs to be NONE, so our move watcher is disabled
+            [TOOL.TEXTURE_PAINT, ICON.CUBE],
+            [TOOL.ELEVATION, ICON.ELEVATION],
+        ] as [TOOL, ICON][]).forEach(([tool, icon]) => this.createToolAction(tool, icon, tileOptionsSection))
     }
 
-    private createToolAction(tool: TOOLS, icon: ICON, element: HTMLElement) {
+    private createToolAction(tool: TOOL, icon: ICON, element: HTMLElement) {
         const container = domCreate('div', {
             classList: ['gm-option-tool'],
         }, element);
@@ -183,7 +199,7 @@ class GmOptions {
     private initialize(gm: GmClient) {
         gm.maps.watch(maps => {
             const sel = this.mapSelect;
-            sel.childNodes.forEach((c, idx) => {
+            [...sel.childNodes].forEach((c, idx) => {
                 if (idx) sel.removeChild(c);
             });
             maps.forEach(map => {

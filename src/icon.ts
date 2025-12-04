@@ -4,7 +4,7 @@ export enum ICON {
     CUBE = 'fa-cube',
     MOVE = 'fa-arrows-up-down-left-right',
     EYEDROPPER = 'fa-eye-dropper',
-    ELEVATION = 'fa-arrows-down-up-across-line'
+    ELEVATION = 'fa-arrow-down-up-across-line'
 }
 
 export class Icon {

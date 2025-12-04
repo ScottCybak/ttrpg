@@ -1,5 +1,6 @@
 import { FACE } from "def/face";
 import { TEXTURE } from "def/texture";
+import { TileOptions } from "def/tile-options";
 import { domCreate } from "domCreate";
 
 export interface RectangularPrismData {
@@ -8,7 +9,7 @@ export interface RectangularPrismData {
     depth: number;
 }
 
-const optionalFaces = [FACE.NORTH, FACE.SOUTH, FACE.EAST, FACE.WEST];
+const allFaces = [FACE.TOP, FACE.NORTH, FACE.SOUTH, FACE.EAST, FACE.WEST];
 
 export class RectangularPrism {
     private _depth!: number;
@@ -16,39 +17,41 @@ export class RectangularPrism {
     constructor(
         public readonly element: HTMLElement,
         private data: RectangularPrismData,
-        private textures: {[key in FACE]?: TEXTURE} = {},
+        private options: TileOptions,
     ) {
         this.depth = data.depth;
     }
 
-    set depth(depth: number) {
+    private set depth(depth: number) {
         if (depth !== this._depth) {
             this._depth = depth;
-            this.create();
+            this.generate();
         }
     }
-    get depth() {
+    private get depth() {
         return this._depth ?? 0;
     }
 
-    create() {
-        const style = this.element.style;
-        this.element.classList.add('rectangular-prism');
+    generate() {
+        const e = this.element;
+        const style = e.style;
+        e.classList.add('rectangular-prism');
         style.width = this.data.width + 'px';
         style.height = this.data.height + 'px';
-        const faces = [this.createFace(FACE.TOP)];
-        if (this._depth) {
-            optionalFaces.forEach(f => faces.push(this.createFace(f)));
-        }
-        faces.forEach(e => this.element.appendChild(e))
+        [...e.childNodes].forEach(c => e.removeChild(c));
+        allFaces.forEach(f => this.generateFace(f, e));
     }
 
-    private createFace(face: FACE): HTMLElement {
+    private generateFace(face: FACE, appendTo: HTMLElement): HTMLElement | undefined {
+        const hasDepth = !!this.depth;
+        if (!hasDepth && face !== FACE.TOP) {
+            return;
+        }
         const e = domCreate('div', {
             classList: ['face', `face-${face}`]
-        });
-        const textures = this.textures;
-        const hasDepth = !!this.depth;
+        }, appendTo);
+        const o = this.options ?? {};
+        const textures = o.texture;
         const width = this.data.width + 'px';
         const height = this.data.height + 'px';
         const depth = this.depth + 'px';
@@ -57,6 +60,9 @@ export class RectangularPrism {
             case FACE.TOP:
                 style.width = width;
                 style.height = height;
+                if (this.depth) {
+                    e.dataset.steps = `${o.elevation}`;
+                }
                 if (hasDepth) {
                     style.transform = `translateZ(${depth})`;
                     style.filter = `brightness(1.1)`;
@@ -86,47 +92,4 @@ export class RectangularPrism {
         if (textures?.[face]) e.classList.add('texture', textures[face]);
         return e;
     }
-
-    // private createFaceOld(face: FACE, tileSizePx: number, elevationStepPx: number, options: TileOptions): HTMLElement {
-    //         const e = domCreate('div', {
-    //             classList: ['face', `face-${face}`]
-    //         });
-    //         const style = e.style;
-    //         const depth = (options.e ?? 0) * elevationStepPx;
-    //         const t = `${tileSizePx}px`;
-    //         const h = `${depth}px`;
-    //         const textures = options.t;
-        
-    //         switch (face) {
-    //             case FACE.TOP:
-    //                 style.width = style.height = t;
-    //                 if (options.e) {
-    //                     style.transform = `translateZ(${h})`;
-    //                     style.filter = `brightness(1.1)`;
-    //                 }
-    //                 break;
-    //             case FACE.NORTH:
-    //                 style.width = t;
-    //                 style.height = h;
-    //                 style.transform = `rotateX(90deg)`;
-    //                 break;
-    //             case FACE.SOUTH:
-    //                 style.width = t;
-    //                 style.height = h;
-    //                 style.transform = `rotateX(-90deg) translate3d(0, -${h}, ${t})`;
-    //                 break;
-    //             case FACE.WEST:
-    //                 style.width = h;
-    //                 style.height = t;
-    //                 style.transform = `rotateY(-90deg)`;
-    //                 break;
-    //             case FACE.EAST:
-    //                 style.width = h;
-    //                 style.height = t;
-    //                 style.transform = `rotateY(90deg) translate3d(-${h}, 0, ${t})`;
-    //                 break;
-    //         }
-    //         if (textures?.[face]) e.classList.add('texture', textures[face]);
-    //         return e;
-    //     }
 }
