@@ -14,6 +14,7 @@ class KeyboardInput {
             }
         });
         window.addEventListener('keyup', evt => this.keysDown.delete(evt.key.toLowerCase()));
+        window.addEventListener('blur', () => this.keysDown.clear());
     }
 
     has(key: string): boolean {

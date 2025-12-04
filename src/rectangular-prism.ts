@@ -1,5 +1,4 @@
 import { FACE } from "def/face";
-import { TEXTURE } from "def/texture";
 import { TileOptions } from "def/tile-options";
 import { domCreate } from "domCreate";
 
@@ -17,18 +16,18 @@ export class RectangularPrism {
     constructor(
         public readonly element: HTMLElement,
         private data: RectangularPrismData,
-        private options: TileOptions,
+        private options?: TileOptions,
     ) {
         this.depth = data.depth;
     }
 
-    private set depth(depth: number) {
+    set depth(depth: number) {
         if (depth !== this._depth) {
             this._depth = depth;
             this.generate();
         }
     }
-    private get depth() {
+    get depth() {
         return this._depth ?? 0;
     }
 
@@ -61,11 +60,13 @@ export class RectangularPrism {
                 style.width = width;
                 style.height = height;
                 if (this.depth) {
-                    e.dataset.steps = `${o.elevation}`;
+                    
                 }
                 if (hasDepth) {
+                    e.dataset.steps = `${o.elevation}`;
+                    const brightness = 1 + ((o.elevation ?? 0) / 50);
                     style.transform = `translateZ(${depth})`;
-                    style.filter = `brightness(1.1)`;
+                    style.filter = `brightness(${brightness})`;
                 }
                 break;
             case FACE.NORTH:

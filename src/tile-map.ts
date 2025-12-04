@@ -21,7 +21,6 @@ export class TileMap {
     private readonly defaultTileData = new Watched<TileOptions>({});
     private readonly players = new Watched<MapPlayer[]>([]);
     private readonly npcs = new Watched<MapNpc[]>([]);
-    private readonly maxTileHeight = new Watched(0);
 
     private lastTile: Tile | undefined = undefined;
 
@@ -63,35 +62,27 @@ export class TileMap {
                 }
                 tiles.push(row);
             };
-            // run through our tiles and find the maxElevation
-            this.maxTileHeight.set(Math.max(...tiles.flat(2).map(t => t.totalElevation)));
         });
 
-        Watched.combine(
-            this.players,
-            this.maxTileHeight,
-        ).watch(([players, maxTileHeight]) => {
+        this.players.watch((players) => {
             players.forEach(({id, position}) => {
                 const entity = this.client.playerEntities.get(id);
                 if (entity) {
                     const onTile = this.tileByRowColumn(position?.[0], position?.[1])
                     if (onTile) {
-                        entity.moveToTile(onTile, this.element, maxTileHeight);
+                        entity.moveToTile(onTile, this.element);
                     }
                 }
             })
         });
 
-        Watched.combine(
-            this.npcs,
-            this.maxTileHeight,
-        ).watch(([npcs, maxTileHeight]) => {
+        this.npcs.watch((npcs) => {
             npcs.forEach(({id, position}) => {
                 const entity = this.client.npcEntities.get(id);
                 if (entity) {
                     const onTile = this.tileByRowColumn(position?.[0], position?.[1]);
                     if (onTile) {
-                        entity.moveToTile(onTile, this.element, maxTileHeight);
+                        entity.moveToTile(onTile, this.element);
                     }
                 }
             })

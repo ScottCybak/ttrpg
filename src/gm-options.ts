@@ -26,10 +26,6 @@ class GmOptions {
     private activeTool = new Watched<TOOL>(TOOL.NONE);
     private activeDragging = false;
     private tools: Partial<{[key in TOOL]: InstanceType<ValidTools>}> = {};
-    // private tools: {
-    //     textureSelect?: TextureSelect,
-    //     elevation?: Elevation,
-    // } = {};
     
     private element = domCreate('div', {
         id: 'gm-options',
@@ -169,7 +165,6 @@ class GmOptions {
     create() {
         const tileOptionsSection = domCreate('div', { classList: ['gm-options-section']}, this.element);
         ([
-            [TOOL.NONE, ICON.MOVE], // this needs to be NONE, so our move watcher is disabled
             [TOOL.TEXTURE_PAINT, ICON.CUBE],
             [TOOL.ELEVATION, ICON.ELEVATION],
         ] as [TOOL, ICON][]).forEach(([tool, icon]) => this.createToolAction(tool, icon, tileOptionsSection))

@@ -54,6 +54,7 @@ export class Elevation extends ToolBase<HTMLElement, TileOptions['elevation']> {
             });
         } else if (!e.parentElement) {
             this.element.appendChild(e);
+            this.addListener(window, 'keypress', this.keyListener);
         }
     }
 

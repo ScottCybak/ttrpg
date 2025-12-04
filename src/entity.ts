@@ -12,9 +12,6 @@ export class Entity {
     private tile: Tile | undefined = undefined;
     private tileWatcher!: () => void;
     private hostElement!: HTMLElement;
-    private pole!: RectangularPrism;
-    private poleHeight = 0;
-    private floater!: HTMLElement;
     private hostile = new Watched<ENTITY_TYPE>(ENTITY_TYPE.NONE);
 
     constructor(
@@ -32,24 +29,12 @@ export class Entity {
         })
     }
 
-    set maxTileHeight(max: number) {
-        if (max !== this.poleHeight) {
-            this.pole.depth = max;
-            this.poleHeight = max;// 
-            this.floater.style.transform = `translateZ(calc(${max}px - var(--elevation)))`;
-            // do we have an offset from the base?
-        }   
-    }
-
-    moveToTile(tile: Tile, hostElement: HTMLElement, maxTileHeight: number) {
+    moveToTile(tile: Tile, hostElement: HTMLElement) {
         // cancel our previous watcher if the tile is different
         if (this.tile && this.tile !== tile) {
             this.tile = undefined;
             this.tileWatcher!();
         }
-
-        // cascade down anything we may need
-        this.maxTileHeight = maxTileHeight;
 
         if (tile) {
             // attach our tile watcher
@@ -62,9 +47,9 @@ export class Entity {
                     s.height = d.height + 'px';
                     s.transform = `translateZ(var(--elevation))`;
                     s.setProperty('--elevation', d.elevation + 'px');
-                    if (d.elevation >= this.poleHeight) {
-                        this.pole.element.classList.add('hide');
-                    }
+                    // if (d.elevation >= this.poleHeight) {
+                    //     this.pole.element.classList.add('hide');
+                    // }
                 }
             });
 
@@ -84,18 +69,8 @@ export class Entity {
             classList: ['entity-disc'],
         }, this.element);
 
-        const pole = domCreate('div', {
-            classList: ['entity-rod'],
-        }, disc);
-        
-        this.pole = new RectangularPrism(pole, {
-            width: 4,
-            height: 4,
-            depth: this.poleHeight,
-        });
-
         // we need to spin up a box thats' above the pole
-        const floater = this.floater = domCreate('div', {
+        const floater = domCreate('div', {
             classList: ['entity-floater'],
         }, this.element);
 
