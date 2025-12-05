@@ -11,7 +11,7 @@ import { Watched } from "watched";
 
 export class TileMap {
 
-    private readonly element = domCreate('div', { id: 'map' });
+    private readonly element = domCreate('div', { id: 'tile-map' });
     private readonly tiles: Tile[][] = [];
     private readonly rows = new Watched(0);
     private readonly columns = new Watched(0);
@@ -29,15 +29,7 @@ export class TileMap {
         private client: GmClient,
     ) {
         const e = this.element;
-        
-        this.rows.set(config.rows);
-        this.columns.set(config.columns);
-        this.tileSizePx.set(config.tileSizePx);
-        this.tileData.set(config.tileData ?? {})
-        this.defaultTileData.set(config.defaultTileData ?? {});
-        this.elevationStepPx.set(config.elevationStepPx);
-        this.players.set(config.players ?? []);
-        this.npcs.set(config.npcs ?? []);
+        this.config = config;
 
         Watched.combine(
             this.tileSizePx,
@@ -93,6 +85,18 @@ export class TileMap {
 
     set transform(transform: string) {
         this.element.style.transform = transform;
+    }
+
+    set config(config: MapConfig) {
+        // destroy the old stuffs?
+        this.rows.set(config.rows);
+        this.columns.set(config.columns);
+        this.tileSizePx.set(config.tileSizePx);
+        this.tileData.set(config.tileData ?? {})
+        this.defaultTileData.set(config.defaultTileData ?? {});
+        this.elevationStepPx.set(config.elevationStepPx);
+        this.players.set(config.players ?? []);
+        this.npcs.set(config.npcs ?? []);
     }
 
     appendTo(element: HTMLElement): this {

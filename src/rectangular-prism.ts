@@ -41,6 +41,11 @@ export class RectangularPrism {
         allFaces.forEach(f => this.generateFace(f, e));
     }
 
+    destroy() {
+        [...this.element?.childNodes].forEach(n => this.element.removeChild(n));
+        this.element?.parentElement?.removeChild(this.element);
+    }
+
     private generateFace(face: FACE, appendTo: HTMLElement): HTMLElement | undefined {
         const hasDepth = !!this.depth;
         if (!hasDepth && face !== FACE.TOP) {

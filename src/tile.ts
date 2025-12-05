@@ -21,10 +21,14 @@ export class Tile {
     tileSizePx = new Watched(0);
     readonly options = new Watched<TileOptions>({});
     elevationStepPx = new Watched(0);
-    totalElevation = 0;
+
 
     readonly hovering = new Watched(false);
     readonly positionalData = new Watched<PositionalData | undefined>(undefined);
+
+    private rectangularPrism!: RectangularPrism;
+
+    private listeners: (() => void)[] = [];
     
     constructor(
         row: number,
@@ -33,21 +37,25 @@ export class Tile {
         elevationStepPx: number,
         data: TileOptions,
     ) {
+        // nothing sets these otherwise, so why pub?
         this.row.set(row);
         this.column.set(column);
         this.tileSizePx.set(tileSizePx);
         this.options.set(data);
         this.elevationStepPx.set(elevationStepPx);
 
-        Watched
-            .combine(this.row, this.column, this.tileSizePx, this.elevationStepPx, this.options)
-            .watch(([r, c, s, e, opt]) => this.update(r, c, s, e, opt));
-
-        this.hovering.watch(hovering => {
-            requestAnimationFrame(() => {
-                this.element.classList[hovering ? 'add' : 'remove']('hovering');
-            });
-        });
+        this.listeners.push(
+            Watched
+                .combine(this.row, this.column, this.tileSizePx, this.elevationStepPx, this.options)
+                .watch(([r, c, s, e, opt]) => {
+                    this.update(r, c, s, e, opt);
+            }),
+            this.hovering.watch(hovering => {
+                requestAnimationFrame(() => {
+                    this.element.classList[hovering ? 'add' : 'remove']('hovering');
+                });
+            }),
+        );
     }
 
     appendTo(element: HTMLElement): this {
@@ -55,25 +63,28 @@ export class Tile {
         return this;
     }
     
-    destroy() { }
+    destroy() {
+        this.rectangularPrism?.destroy();
+        [ ...this.element.childNodes].forEach(n => this.element.removeChild(n));
+        this.listeners.forEach(disco => disco());
+        this.element.parentElement?.removeChild(this.element);
+    }
 
     private update(row: number, column: number, tileSizePx: number, elevationStepPx: number, options: TileOptions) {
-        // all of the internals of this neeed to be split into rectuangular-prism 
-        
         const e = this.element;
-        [...e.childNodes].forEach(n => e.removeChild(n));
-
         const left = column * tileSizePx;
         const top = row * tileSizePx;
         const width = tileSizePx;
         const height = tileSizePx;
         const depth = (options.elevation ?? 0) * elevationStepPx;
 
-        new RectangularPrism(this.element, {width, height, depth }, options);
+        this.rectangularPrism = new RectangularPrism(this.element, {width, height, depth }, options);
 
         // position it
         e.style.left = `${left}px`;
         e.style.top = `${top}px`;
+        e.dataset.row = '' + row;
+        e.dataset.column = '' + column;
 
         // handle our custom shared texture
         e.style.setProperty('--texture-x', left + 'px');
@@ -86,7 +97,6 @@ export class Tile {
             height,
             elevation: depth,
         });
-        this.totalElevation = depth;
     } 
 
     isEnemyOccupying() {

@@ -98,7 +98,12 @@ export class GmClient {
     }
 
     loadMap(map: MapConfig) {
-        const tileMap = this.tileMap = new TileMap(map, this).appendTo(this.element);
+        let tileMap = this.tileMap;
+        if (!this.tileMap) {3
+            tileMap = this.tileMap = new TileMap(map, this).appendTo(this.element);
+        } else {
+            tileMap.config = map;
+        }
        
         this.map.set(map);
         this.maxX = map.columns * map.tileSizePx;
