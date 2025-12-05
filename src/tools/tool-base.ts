@@ -1,3 +1,4 @@
+import { GmClient } from "gm-client";
 import { Tile } from "tile";
 import { Watched } from "watched";
 
@@ -8,7 +9,9 @@ export abstract class ToolBase<E extends HTMLElement, V> {
     abstract toolCssClass: string;
 
     protected toolElement!: E;
+
     protected value!: V;
+
     protected readonly cssClass = 'gm-option-tool-dialog';
 
     protected readonly listeners: [target: Window | Element, name: string, fn: (...args: any[]) => void][] = [];
@@ -21,16 +24,17 @@ export abstract class ToolBase<E extends HTMLElement, V> {
         return this.value;
     };
 
-    tileClicked(tile: Tile) {
-        // stub...
-    }
+    tileClicked(tile: Tile) { }
 
-    tileClickStart(tile: Tile) {
-        // stub
-    }
+    tileClickStart(tile: Tile) { }
 
     constructor(
-        protected element: HTMLElement) {
+        protected element: HTMLElement,
+        protected gmClient: GmClient,
+    ) {}
+
+    gmClientChanged(gmClient: GmClient) {
+        this.gmClient = gmClient;
     }
 
     addListener(target: Window | Element, name: string, fn: (...args: any[]) => void) {

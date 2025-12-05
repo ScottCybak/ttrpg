@@ -16,7 +16,7 @@ export class TextureSelect extends ToolBase<HTMLFormElement, TileOptions['textur
         if (!form) {
             const size = 64; // defines our width
             const half = size / 2;
-            const diameter = (half * Math.sqrt(10)) * 2;
+            const diameter = Math.round((half * Math.sqrt(10)) * 2);
             const style = `width: ${size}px; height: ${size}px;`;
             const classList = ['gm-option-tool-texture-box'];
             const shift = (diameter - (size * 3)) / 2;

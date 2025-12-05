@@ -52,6 +52,9 @@ body, #game-root {
     height: 100vh;
     overflow: hidden;
 }
+#game-root {
+    position: absolute;
+}
 
 .dialog {
     position: fixed;
@@ -94,36 +97,66 @@ body, #game-root {
     --padding: 4px;
     position: fixed;
     z-index: 1;
-    top: var(--padding);
-    left: var(--padding);
+    bottom: var(--padding);
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
-    background-color: var(--bg);
-    gap: 0 calc(var(--padding) * 2);
+    flex-direction: column-reverse;
+    justify-content: center;
+    align-items: center;
+    gap: var(--padding);
     .gm-options-section {
         display: flex;
         align-items: center;
+        gap: 0 var(--padding);
         &:last-child {
             border-right: 0;
         }
     }
     .gm-option-tool {
-        padding: var(--padding);
-        border: 2px solid #ffffff00;
+        position: relative;
+        padding: calc(var(--padding) * 2);
+        border: 2px solid var(--color);
+        background-color: var(--bg);
         border-radius: 4px;
+        overflow: hidden;
         &.active {
             border-color: var(--active-color);
+            color: var(--active-color);
+            /* background: var(--color); */
+        }
+        &.active::before {
+            color: var(--active-color);
+            background-color: var(--active-color);
         }
         &:hover {
             cursor: pointer;
-            filter: brightness(1.5);
+            filter: brightness(2);
+        }
+        .fa {
+            font-size: 20px;
+        }
+        &[data-hot-key]::before {
+            position: absolute;
+            z-index: 1;
+            content: attr(data-hot-key);
+            right: 0;
+            top: 0;
+            background: var(--color);
+            color: var(--bg);
+            font-size: 9px;
+            line-height: 9px;
+            padding: 0 1px;
+            border-bottom-left-radius: 25%;
         }
     }
 }
 
 .gm-option-tool-dialog {
-    position: fixed;
-    top: 40px;
+    position: relative;
     background: var(--bg);
+    border: 2px solid var(--color);
+    padding: var(--padding);
 }
 
 .gm-option-tool-texture {
@@ -133,7 +166,6 @@ body, #game-root {
     width: var(--o-diameter);
     height: var(--o-diameter);
     border-radius: 50%;
-    border: 2px solid var(--color);
     overflow: hidden;
 
     .gm-option-tool-texture-box {
@@ -209,6 +241,8 @@ body, #game-root {
     transform-style: preserve-3d;
     width: 100vw;
     height: 100vh;
+    position: absolute;
+    z-index: 0;
 }
 
 #map {

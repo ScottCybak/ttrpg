@@ -115,7 +115,7 @@ export class GmClient {
     }
 
     createMap() {
-        new Dialog<MapConfig>()
+        return new Dialog<MapConfig>()
             .fromForm(mapForm, { ...defaultMapConfig})
             .show()
             .onClose(v => {

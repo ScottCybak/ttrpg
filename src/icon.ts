@@ -4,7 +4,8 @@ export enum ICON {
     CUBE = 'fa-cube',
     MOVE = 'fa-arrows-up-down-left-right',
     EYEDROPPER = 'fa-eye-dropper',
-    ELEVATION = 'fa-arrow-down-up-across-line'
+    ELEVATION = 'fa-arrow-down-up-across-line',
+    SETTINGS = 'fa-bars',
 }
 
 export class Icon {
@@ -18,7 +19,7 @@ export class Icon {
     ) {
         this.icon = icon;
         if (appendToElement) this.appendTo(appendToElement);
-        this.element.addEventListener('click', (evt) => {
+        this.element.addEventListener('click', () => {
             if (this.isDisabled || !this.onClickCallback) return;
             this.onClickCallback?.();
         })

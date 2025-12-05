@@ -2,26 +2,30 @@ import { TileOptions } from "def/tile-options";
 import { domCreate } from "domCreate";
 import { GmClient } from "gm-client";
 import { ICON, Icon } from "icon";
+import { keyboardInput } from "keys-down";
 import { throttle } from "throttle";
 import { Elevation } from "tools/elevation";
+import { MapEdit } from "tools/map-edit";
 import { TextureSelect } from "tools/texture-select";
 import { ToolBase } from "tools/tool-base";
 import { Watched } from "watched";
 
 enum TOOL {
     NONE = 0,
-    TEXTURE_PAINT = 1 << 0,
-    ELEVATION = 1 << 1,
+    MAP_EDIT = 1 << 0,
+    TEXTURE_PAINT = 1 << 1,
+    ELEVATION = 1 << 2,
 };
 
-type ValidTools = typeof TextureSelect | typeof Elevation;
+type ValidTools = typeof TextureSelect | typeof Elevation | typeof MapEdit;
 
-const validTools: [TOOL, ICON, ValidTools][] = [
-    [TOOL.TEXTURE_PAINT, ICON.CUBE, TextureSelect],
-    [TOOL.ELEVATION, ICON.ELEVATION, Elevation],
+const tools: [TOOL, ICON, ValidTools, string, string][] = [
+    [TOOL.MAP_EDIT, ICON.SETTINGS, MapEdit, '1', 'edit/create map'],
+    [TOOL.TEXTURE_PAINT, ICON.CUBE, TextureSelect, '2', 'textures'],
+    [TOOL.ELEVATION, ICON.ELEVATION, Elevation, '3', 'elevations'],
 ];
 
-class GmOptions {
+export class GmOptions {
     private _gmClient!: GmClient;
     private activeTool = new Watched<TOOL>(TOOL.NONE);
     private activeDragging = false;
@@ -31,37 +35,7 @@ class GmOptions {
         id: 'gm-options',
     });
 
-    // Map
-    private mapOptions = domCreate('div', { id: 'gm-map-options', classList: ['gm-options-section'] }, this.element);
-    private mapSelect = domCreate('select', {
-        id: 'select-map',
-        inner: '<option disabled selected hidden>Select a map</option>',
-    }, this.mapOptions);
-    private editMap = domCreate('button', {
-        inner: 'Edit',
-    }, this.mapOptions);
-    private newMap = domCreate('button', {
-        inner: 'New'
-    }, this.mapOptions);
-
     constructor() {
-        this.newMap.addEventListener('click', () => {
-            this.activeTool.set(TOOL.NONE);
-            this.gmClient?.createMap();
-        });
-        
-        this.mapSelect.addEventListener('change', () => {
-            this.gmClient.loadMapById(this.mapSelect.value);
-        });
-
-        this.editMap.addEventListener('click', () => {
-            this.activeTool.set(TOOL.NONE);
-            const map = this.gmClient.map.get();
-            if (map) {
-                this.gmClient?.editMap(map);
-            }
-        });
-
         this.create();
 
         // watch our active tool, hide things and create the instance of the this.tool
@@ -72,10 +46,10 @@ class GmOptions {
             if (active === TOOL.NONE) {
                 document.body.classList.remove('hide-entities');
             } else {
-                validTools.filter(([tool]) => tool === active).forEach(([tool, icon, Klass]) => {
+                tools.filter(([tool]) => tool === active).forEach(([tool, icon, Klass]) => {
                     let control = this.tools[tool];
                     if (!control) {
-                        control = this.tools[tool] = new Klass(this.element);
+                        control = this.tools[tool] = new Klass(this.element, this.gmClient);
                     }
                     control.show();
                 })
@@ -160,56 +134,37 @@ class GmOptions {
     private hideAllTools() {
         Object.values(this.tools)
             .forEach(t => t.disconnect());
-    }   
-
-    create() {
-        const tileOptionsSection = domCreate('div', { classList: ['gm-options-section']}, this.element);
-        ([
-            [TOOL.TEXTURE_PAINT, ICON.CUBE],
-            [TOOL.ELEVATION, ICON.ELEVATION],
-        ] as [TOOL, ICON][]).forEach(([tool, icon]) => this.createToolAction(tool, icon, tileOptionsSection))
     }
 
-    private createToolAction(tool: TOOL, icon: ICON, element: HTMLElement) {
-        const container = domCreate('div', {
-            classList: ['gm-option-tool'],
-        }, element);
-        const i = new Icon(icon, container).onClick(() => {
-            console.log('active set', tool);
-            this.activeTool.set(tool);
+    create() {
+        const element = this.element;
+        const section = domCreate('div', { classList: ['gm-options-section']}, element);
+        tools.forEach(([tool, icon, _, hotKey, title]) => {
+
+            const container = domCreate('div', {
+                classList: ['gm-option-tool'],
+                title,
+                dataset: {hotKey},
+            }, section);
+            const onClick = (() => {
+                this.activeTool.set(tool);
+            }).bind(this)
+            const i = new Icon(icon, container).onClick(onClick);
+            this.activeTool.watch(a => container.classList[a === tool ? 'add' : 'remove']('active'))
+            if (hotKey) {
+                keyboardInput.registerHotKey(hotKey, onClick);
+            }
         });
-        this.activeTool.watch(a => container.classList[a === tool ? 'add' : 'remove']('active'))
     }
 
     set gmClient(gmClient: GmClient) {
         if (this.gmClient !== gmClient) {
             this._gmClient = gmClient;
-            this.initialize(gmClient);
+            Object.values(this.tools).forEach(t => t.gmClientChanged(gmClient));
         }
     }
     get gmClient() {
         return this._gmClient;
-    }
-
-    private initialize(gm: GmClient) {
-        gm.maps.watch(maps => {
-            const sel = this.mapSelect;
-            [...sel.childNodes].forEach((c, idx) => {
-                if (idx) sel.removeChild(c);
-            });
-            maps.forEach(map => {
-                domCreate('option', {
-                    value: map.id,
-                    inner: map.name,
-                }, sel);
-            });
-            const currentMap = gm.map.get();
-            if (currentMap) {
-                sel.value = currentMap.id;
-            }
-        });
-
-        gm.map.watch(map => this.mapSelect.disabled = !!map);
     }
 
     appendTo(element: HTMLElement) {
