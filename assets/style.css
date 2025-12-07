@@ -15,6 +15,9 @@
     --grass-dry: url('img/textures/deep-grass-512x512.png');
     --water: url('img/textures/rough-sea-512x512.png');
     --mud: url('img/textures/muddy-terrain-512x512.png');
+    --lava: url('img/textures/lava.png');
+    --ice: url('img/textures/ice-and-snow-ground-512x512.png');
+    --snow: url('img/textures/ice-snow-512x512.png');
 }
 
 .fa {
@@ -214,9 +217,6 @@ body, #game-root {
             background-image: none;
         }
     }
-    .face {
-        
-    }
     .face-t[data-steps]:before {
         content: attr(data-steps);
         display: flex;
@@ -296,14 +296,6 @@ body, #game-root {
         display: flex;
         align-items: center;
         justify-content: center;
-        .entity-rod {
-            &.hide {
-                display: none;
-            }
-        }
-        .entity-rod .face {
-            position: absolute;
-        }
     }
 
     .entity-floater {
@@ -356,4 +348,7 @@ body, #game-root {
     &.grass-dry { background-image: var(--grass-dry); }
     &.mud { background-image: var(--mud); }
     &.water { background-image: var(--water); }
+    &.lava { background-image: var(--lava); }
+    &.ice { background-image: var(--ice); }
+    &.snow { background-image: var(--snow); }
 }

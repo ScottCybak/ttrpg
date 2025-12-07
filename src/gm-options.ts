@@ -1,29 +1,14 @@
 import { TileOptions } from "def/tile-options";
 import { domCreate } from "domCreate";
 import { GmClient } from "gm-client";
-import { ICON, Icon } from "icon";
+import { Icon } from "icon";
 import { keyboardInput } from "keys-down";
 import { throttle } from "throttle";
+import { TOOL, tools, ValidTools } from "tools";
 import { Elevation } from "tools/elevation";
-import { MapEdit } from "tools/map-edit";
-import { TextureSelect } from "tools/texture-select";
 import { ToolBase } from "tools/tool-base";
 import { Watched } from "watched";
 
-enum TOOL {
-    NONE = 0,
-    MAP_EDIT = 1 << 0,
-    TEXTURE_PAINT = 1 << 1,
-    ELEVATION = 1 << 2,
-};
-
-type ValidTools = typeof TextureSelect | typeof Elevation | typeof MapEdit;
-
-const tools: [TOOL, ICON, ValidTools, string, string][] = [
-    [TOOL.MAP_EDIT, ICON.SETTINGS, MapEdit, '1', 'edit/create map'],
-    [TOOL.TEXTURE_PAINT, ICON.CUBE, TextureSelect, '2', 'textures'],
-    [TOOL.ELEVATION, ICON.ELEVATION, Elevation, '3', 'elevations'],
-];
 
 export class GmOptions {
     private _gmClient!: GmClient;
